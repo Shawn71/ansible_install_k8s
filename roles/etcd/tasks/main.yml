@@ -1,0 +1,38 @@
+  - name: Creating etcd directory
+    file: path=/opt/etcd/{{ item }} state=directory
+    with_items:
+      - cfg
+      - bin
+      - ssl
+  - name: Dispatching the etcd binary file to /tmp 
+    unarchive: src=etcd-v3.3.13-linux-amd64.tar.gz dest=/tmp/
+
+  - name: Moving the etcd binary file to /opt/etcd/bin/
+    shell: mv /tmp/etcd-v3.3.13-linux-amd64/{etcd,etcdctl} /opt/etcd/bin/
+
+  - name: Dispatching the etcd certificate file to /opt/etcd/ssl/
+    copy: src=roles/tls/certs/etcd/{{ item }} dest=/opt/etcd/ssl/
+    with_items:
+      - ca.pem
+      - server.pem
+      - server-key.pem
+    notify: restart etcd service
+
+  - name: Dispatching the configuration file and service to destination
+    template: src={{ item.src }} dest={{ item.dest }}
+    with_items:
+      - { src: etcd.service.j2, dest: /usr/lib/systemd/system/etcd.service }
+      - { src: etcd.conf.j2, dest: /opt/etcd/cfg/etcd.conf }
+    notify: restart etcd service
+
+  - name: Rtarting ectd service
+    systemd: name=etcd state=restarted enabled=yes
+      
+  - name: Checking the etcd service
+    shell: |
+      {{ etcd_work_dir }}/bin/etcdctl --ca-file={{ etcd_work_dir }}/ssl/ca.pem --cert-file={{ etcd_work_dir }}/ssl/server.pem --key-file={{ etcd_work_dir }}/ssl/server-key.pem \
+      --endpoints={% for host in groups['etcd'] %}https://{{ hostvars[host].inventory_hostname }}:2379{% if not loop.last %},{% endif %}{% endfor %} cluster-health
+    register: result
+   
+  - name: Debuggin result
+    debug: msg={{ result.stdout_lines }}

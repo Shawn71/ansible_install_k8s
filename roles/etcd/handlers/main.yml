@@ -1,0 +1,2 @@
+- name: restart etcd service
+  systemd: name=etcd state=restarted

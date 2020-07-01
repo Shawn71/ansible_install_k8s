@@ -1,0 +1,33 @@
+[master]
+192.168.1.21 ansible_ssh_host=192.168.1.21 node_name=master1
+192.168.1.22 ansible_ssh_host=192.168.1.22 node_name=master2
+
+[node]
+192.168.1.21 ansible_ssh_host=192.168.1.21 node_name=master1
+192.168.1.22 ansible_ssh_host=192.168.1.22 node_name=master2
+192.168.1.23 ansible_ssh_host=192.168.1.23 node_name=node1
+192.168.1.24 ansible_ssh_host=192.168.1.24 node_name=node2
+192.168.1.25 ansible_ssh_host=192.168.1.25 node_name=node3
+
+[ha]
+192.168.1.26 ansible_ssh_host=192.168.1.26 lb_name=nginx1
+192.168.1.27 ansible_ssh_host=192.168.1.27 lb_name=nginx2
+
+[etcd]
+192.168.1.26 ansible_ssh_host=192.168.1.26 etcd_name=etcd1
+192.168.1.27 ansible_ssh_host=192.168.1.27 etcd_name=etcd2
+192.168.1.28 ansible_ssh_host=192.168.1.28 etcd_name=etcd3
+
+[docker]
+192.168.1.21 ansible_ssh_host=192.168.1.21
+192.168.1.22 ansible_ssh_host=192.168.1.22
+192.168.1.23 ansible_ssh_host=192.168.1.23
+192.168.1.24 ansible_ssh_host=192.168.1.24
+192.168.1.25 ansible_ssh_host=192.168.1.25
+192.168.1.26 ansible_ssh_host=192.168.1.26
+192.168.1.27 ansible_ssh_host=192.168.1.27
+192.168.1.28 ansible_ssh_host=192.168.1.28
+ 
+
+[etcd:vars]
+etcd_work_dir=/opt/etcd/

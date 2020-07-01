@@ -1,0 +1,47 @@
+---
+
+- name: Allowing node to join the cluster
+  ignore_errors: yes
+  shell: kubectl certificate approve $(kubectl get csr | awk 'NR!=1{print $1}')
+
+- name: Copying yaml file to master
+  copy: src={{ item }} dest={{ tmp_dir }}
+  with_fileglob:
+    - "*.yaml"
+
+- name: Deploying Flannel, dashboard,CoreDNS ,Ingress
+  ignore_errors: yes
+  shell: |
+    cd {{ tmp_dir }} && \
+    for yaml in $(ls *.yaml);do kubectl apply -f $yaml;done
+
+- name: Replacing the dashboard certificates
+  shell: |
+    kubectl delete secret kubernetes-dashboard-certs -n kubernetes-dashboard | true
+    kubectl create secret generic kubernetes-dashboard-certs \
+    --from-file={{ k8s_work_dir }}/ssl/server-key.pem --from-file={{ k8s_work_dir }}/ssl/server.pem -n kubernetes-dashboard
+    kubectl apply -f {{ tmp_dir }}/kubernetes-dashboard.yaml
+
+- name: Checking the pod status
+  shell: kubectl get all -A
+  register: pod_status
+- debug: msg={{ pod_status.stdout_lines }}
+
+- name: Creating dashboard administrator token
+  ignore_errors: yes
+  shell: |
+    kubectl create serviceaccount dashboard-admin -n kubernetes-dashboard
+    kubectl create clusterrolebinding dashboard-admin --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
+
+- name: Acquiring dashboard administrator token
+  ignore_errors: yes
+  shell: |
+         web='https://NodeIP:30001'
+         token=$(kubectl describe secrets -n kubernetes-dashboard \
+         $(kubectl get secret -n kubernetes-dashboard | awk '/dashboard-admin/{print $1}') |awk '/^token/{print $2}')
+         echo "访问地址--->$web"
+         echo "令牌内容--->$token"
+  register: web_token
+
+- name: Outputting login token
+  debug: msg={{ web_token.stdout_lines }}

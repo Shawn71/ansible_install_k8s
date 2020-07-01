@@ -1,0 +1,49 @@
+- hosts: docker
+  roles:
+   - common
+  tags: common
+
+- hosts: docker
+  roles:
+   - docker
+  tags: docker
+
+- hosts: localhost
+  gather_facts: no
+  roles:
+   - tls
+  tags: tls
+
+- hosts: etcd
+  gather_facts: no
+  roles:
+   - etcd
+  tags: etcd
+
+- hosts: master
+  gather_facts: no
+  roles:
+    - master
+  tags:
+    - master
+
+- hosts: node
+  gather_facts: no
+  roles:
+    - node
+  tags:
+    - node
+
+- hosts: ha
+  gather_facts: no
+  roles:
+    - ha
+  tags:
+    - ha
+
+- hosts: master
+  gather_facts: no
+  roles: 
+    - addons
+  tags:
+    - addons

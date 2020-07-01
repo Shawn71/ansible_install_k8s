@@ -16,6 +16,13 @@
 
 ### 3、修改Ansible文件
 
+
+```
+# bash ssh-login-withoutpass.sh
+
+``` 
+### 4、修改Ansible文件
+
 修改hosts文件，根据规划修改对应IP和名称。
 
 ```
@@ -32,7 +39,7 @@ cert_hosts:
   k8s:
   etcd:
 ```
-## 4、一键部署
+## 5、一键部署
 ### 架构图
 多Master架构
 ![avatar](https://github.com/ShawnBian/ansible-install-k8s/blob/master/multi-master.jpg)
@@ -40,7 +47,7 @@ cert_hosts:
 ```
 # ansible-playbook -i hosts site.yml
 ```
-## 5、部署控制
+## 6、部署控制
 如果安装某个阶段失败，可针对性测试.
 
 例如：只运行部署插件

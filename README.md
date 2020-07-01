@@ -38,12 +38,12 @@ cert_hosts:
 ![avatar](https://github.com/ShawnBian/ansible-install-k8s/blob/master/multi-master.jpg)
 ### 部署命令
 
-ansible-playbook -i hosts site.yml
+# ansible-playbook -i hosts site.yml
 
 ## 5、部署控制
 如果安装某个阶段失败，可针对性测试.
 
 例如：只运行部署插件
 ```
-ansible-playbook -i hosts site.yml --tags addons
+# ansible-playbook -i hosts site.yml --tags addons
 ```

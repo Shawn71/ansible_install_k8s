@@ -1,0 +1,83 @@
+---
+- name: Creating kubnernetes working directory
+  file: path=/opt/kubernetes/{{ item }} state=directory 
+  with_items:
+    - bin
+    - cfg
+    - ssl
+    - logs
+
+- name: Creating etcd certificate directory for k8s
+  file: path=/opt/etcd/ssl/ state=directory
+ 
+- name: Creating tmp directory
+  file: path={{ tmp_dir }} state=directory
+
+- name: Extracting and dispath k8s binary package
+  unarchive: src={{ item }} dest={{ tmp_dir }}
+  with_fileglob:
+    - "{{ software_dir }}/kubernetes-*.tar.gz"
+   
+- name: Copying k8s master binary file and kubectl to the specify destination accordingly
+  copy: src={{ tmp_dir }}/kubernetes/server/bin/{{ item.src }} dest={{ item.dest }} remote_src=yes mode={{ item.mode }}
+  with_items: 
+    - { src: kube-apiserver, dest: /opt/kubernetes/bin, mode: '0755' }
+    - { src: kube-controller-manager, dest: /opt/kubernetes/bin, mode: '0755' }
+    - { src: kube-scheduler, dest: /opt/kubernetes/bin, mode: '0755' }
+    - { src: kubectl, dest: /usr/bin, mode: '0755' }
+
+- name: Distributing the k8s cert 
+  copy: src=../tls/certs/kubernetes/{{ item }} dest={{ k8s_work_dir }}/ssl/
+  with_items:
+    - ca.pem
+    - ca-key.pem
+    - server.pem
+    - server-key.pem
+
+- name: Distributing etcd certificate for k8s 
+  copy: src=../tls/certs/etcd/{{ item }} dest=/opt/etcd/ssl/
+  with_items:
+    - ca.pem
+    - server.pem
+    - server-key.pem
+
+- name: Distributing token files
+  copy: src=token.csv dest={{ k8s_work_dir }}/cfg
+ 
+- name: Distributing k8s configuration files
+  template: src={{ item.src }} dest={{ k8s_work_dir }}/cfg/{{ item.dest }}
+  with_items:
+    - { src: kube-apiserver.conf.j2, dest: kube-apiserver.conf }
+    - { src: kube-controller-manager.conf.j2, dest: kube-controller-manager.conf }
+    - { src: kube-scheduler.conf.j2, dest: kube-scheduler.conf }
+  notify: restart master service
+
+- name: Distributing service files
+  template: src={{ item.src }} dest=/usr/lib/systemd/system/{{ item.dest }}
+  with_items:
+    - { src: kube-apiserver.service.j2, dest: kube-apiserver.service }
+    - { src: kube-controller-manager.service.j2, dest: kube-controller-manager.service }
+    - { src: kube-scheduler.service.j2, dest: kube-scheduler.service }
+
+- name: Starting the service related with master component
+  systemd: name={{ item }} state=restarted enabled=yes daemon_reload=yes
+  with_items:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+
+- name: Checking the master status
+  shell: sleep 2 && kubectl get cs
+  register: cs
+- debug: msg={{ cs.stdout_lines }}
+ 
+- name: Copying rbac files
+  copy: src={{ item }} dest={{ tmp_dir }}
+  with_items:
+    - kubelet-bootstrap-rbac.yaml
+    - apiserver-to-kubelet-rbac.yaml
+
+- name: Authorizing api-server access kubelet and authorizing kubelet bootstrap
+  ignore_errors: yes
+  shell: kubectl apply -f {{ tmp_dir }}/apiserver-to-kubelet-rbac.yaml && \
+         kubectl apply -f {{ tmp_dir }}/kubelet-bootstrap-rbac.yaml  

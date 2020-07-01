@@ -14,20 +14,13 @@
 # cd ansible-install-k8s
 ```
 
-### 3、运行脚本 
-
-```
-# bash ssh-login-withoutpass.sh
-
-```
-
-### 4、修改Ansible文件
+### 3、修改Ansible文件
 
 修改hosts文件，根据规划修改对应IP和名称。
 
 ```
 # vi hosts
-
+...
 ```
 修改group_vars/all.yml文件，修改软件包目录和证书可信任IP。
 
@@ -39,17 +32,18 @@ cert_hosts:
   k8s:
   etcd:
 ```
-## 5、一键部署
+## 4、一键部署
 ### 架构图
 多Master架构
 ![avatar](https://github.com/ShawnBian/ansible-install-k8s/blob/master/multi-master.jpg)
 ### 部署命令
 ```
 多Master版：
-# ansible-playbook -i hosts site.yml
-
 ```
-## 6、部署控制
+# ansible-playbook -i hosts site.yml
+```
+
+## 5、部署控制
 如果安装某个阶段失败，可针对性测试.
 
 例如：只运行部署插件

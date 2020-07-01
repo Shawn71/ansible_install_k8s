@@ -1,0 +1,30 @@
+---
+
+- name: create tmp directory
+  file: path={{ tmp_dir }} state=directory
+
+- name: copy nginx & keepalived package to the temp directory
+  unarchive: src={{ software_dir }}/ha.tar.gz dest={{ tmp_dir }}
+
+- name: install nginx & keepalived 
+  yum: name={{ tmp_dir }}/{{ item }} state=present
+  with_items:
+    - "net-snmp-libs-5.7.2-43.el7.x86_64.rpm"
+    - "net-snmp-agent-libs-5.7.2-43.el7.x86_64.rpm"
+    - "keepalived-1.3.5-16.el7.x86_64.rpm"
+    - "nginx-1.16.1-1.el7.ngx.x86_64.rpm"
+
+- name: copy nginx and keepalived configuration to the specified destination
+  template: src={{ item.src}} dest={{ item.dest }}
+  with_items:
+    - { src: nginx.conf.j2, dest: /etc/nginx/nginx.conf }
+    - { src: keepalived.conf.j2, dest: /etc/keepalived/keepalived.conf}
+
+- name: copy the nginx healthy check scripts 
+  copy: src=check_nginx.sh dest=/etc/keepalived/ mode=u+x
+ 
+- name: start keepalived & nginx service 
+  systemd: name={{ item }} state=started enabled=yes daemon_reload=yes
+  with_items:
+    - nginx
+    - keepalived

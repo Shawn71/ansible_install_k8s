@@ -14,7 +14,7 @@
 # cd ansible-install-k8s
 ```
 
-### 3、修改Ansible文件
+### 3、运行脚本
 
 
 ```

@@ -27,6 +27,7 @@
 
 ```
 # vi hosts
+
 ```
 修改group_vars/all.yml文件，修改软件包目录和证书可信任IP。
 

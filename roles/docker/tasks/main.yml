@@ -1,0 +1,28 @@
+- name: Copying docker binary tar.gz file to remote hosts
+  copy: src=files/docker-18.09.6.tgz dest=/usr/local/src/docker-18.09.6.tgz
+
+- name : Extracting the docker binary file to /tmp
+  unarchive: src=/usr/local/src/docker-18.09.6.tgz dest=/tmp/ remote_src=yes
+
+- name: Copying docker binary file to /usr/bin
+  shell: cp -fr /tmp/docker/* /usr/bin/
+
+- name: Creating docker configuration directory
+  file: path=/etc/docker state=directory mode=0755
+
+- name: Preparing the docker configuration 
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: files/daemon.json, dest: /etc/docker }
+    - { src: files/docker.service, dest: /usr/lib/systemd/system } 
+  notify: restart docker service
+
+- name: Starting docker service and ensure the service is running after the server rebooted
+  systemd: name=docker state=restarted enabled=yes
+
+- name: Checking on docker serivice status
+  shell: docker info
+  register: docker
+
+- name: Debugging docker
+  debug: msg={{ docker.stdout_lines }}

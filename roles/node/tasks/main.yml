@@ -1,0 +1,69 @@
+---
+- name: Creating nodes work directory
+  file: path={{ k8s_work_dir }}/{{ item }} state=directory
+  with_items:
+    - bin
+    - cfg
+    - ssl
+    - logs
+
+- name: Creating cni plugin directory
+  file: path={{ item }} state=directory
+  with_items:
+    - /opt/cni/bin
+    - /etc/cni/net.d
+    - "{{ tmp_dir }}"
+
+- name: Extracting and dispatching k8s node binary files
+  unarchive: src={{ item }} dest={{ tmp_dir }}
+  with_fileglob:
+    - "{{ software_dir }}/kubernetes-*.tar.gz"
+  
+- name: Extracting and dispatching cni plugin binary file
+  unarchive: src={{ item }} dest=/opt/cni/bin
+  with_fileglob:
+    - "{{software_dir }}/cni-plugins-*.tgz"
+
+- name: Copying the node binary file to specify destination accordingly
+  copy: src=/tmp/k8s/kubernetes/server/bin/{{ item.src }} dest=/opt/kubernetes/bin/{{ item.dest }} mode={{ item.mode }} remote_src=yes
+  with_items:
+    - { src: kubelet, dest: kubelet, mode: '0755' }
+    - { src: kube-proxy, dest: kube-proxy, mode: '0755' }
+
+- name: Distributing kubernetes proxy certificate
+  copy: src=..//tls/certs/kubernetes/{{ item }} dest={{ k8s_work_dir }}/ssl
+  with_items:
+    - ca.pem
+    - kube-proxy.pem
+    - kube-proxy-key.pem
+
+- name: Distributing kube-proxy & kubelet configuration
+  template: src={{ item.src }} dest={{ k8s_work_dir }}/cfg/{{ item.dest }}
+  with_items:
+    - { src: bootstrap.kubeconfig.j2, dest: bootstrap.kubeconfig }
+    - { src: kubelet.conf.j2, dest: kubelet.conf }
+    - { src: kubelet-config.yml.j2, dest: kubelet-config.yml }
+    - { src: kube-proxy.kubeconfig.j2, dest: kube-proxy.kubeconfig }
+    - { src: kube-proxy.conf.j2, dest: kube-proxy.conf }
+    - { src: kube-proxy-config.yml.j2, dest:  kube-proxy-config.yml }
+  notify: restart node service
+
+- name: Distributing service file  for kubelet and kube-proxy
+  template: src={{ item.src }} dest=/usr/lib/systemd/system/{{ item.dest }}
+  with_items:
+    - { src: kubelet.service.j2, dest: kubelet.service }
+    - { src: kube-proxy.service.j2, dest: kube-proxy.service }
+
+- name: Starting k8s node component
+  systemd: name={{ item }} state=restarted enabled=yes daemon_reload=yes
+  with_items:
+    - kubelet
+    - kube-proxy
+
+- name: Dispatching the image to the node
+  copy: src={{ software_dir }}/image.tar.gz dest={{ tmp_dir }}
+
+- name: Loading the images to the node
+  shell: cd {{ tmp_dir }} && \
+         tar -xf image.tar.gz && \
+         for image in $(ls *.tar); do docker load -i $image;done

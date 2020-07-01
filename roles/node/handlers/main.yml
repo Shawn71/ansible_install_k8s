@@ -1,0 +1,5 @@
+- name: restart node service
+  systemd: name={{ item }} state=restarted
+  with_items:
+    - kubelet
+    - kube-proxy

@@ -22,7 +22,7 @@
 # vi hosts
 ...
 ```
-修改group_vars/all.yml文件，修改软件包目录和证书可信任IP。
+修改group_vars/all.yml文件，修改文件位置以及证书的SAN信息。
 
 ```
 # vim group_vars/all.yml
@@ -38,7 +38,6 @@ cert_hosts:
 ![avatar](https://github.com/ShawnBian/ansible-install-k8s/blob/master/multi-master.jpg)
 ### 部署命令
 ```
-多Master版：
 ```
 # ansible-playbook -i hosts site.yml
 ```

@@ -10,7 +10,7 @@
 ### 2、下载Ansible部署文件
 
 ```
-# git clone https://github.com/ShawnBian/ansible-install-k8s
+# git clone https://github.com/ShawnBian/ansible_install_k8s
 # cd ansible-install-k8s
 ```
 
